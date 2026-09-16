@@ -36,7 +36,6 @@ static const char* kDefClientId =  DEFAULT_CLIENT_ID;
 
 #ifdef ENABLE_MQTT_TLS
 #ifdef HAVE_SNI
-static int useSNI;
 static const char* mTlsSniHostName = NULL;
 #endif
 #ifdef HAVE_PQC
