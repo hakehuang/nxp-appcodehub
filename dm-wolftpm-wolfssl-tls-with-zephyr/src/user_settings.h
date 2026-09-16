@@ -426,7 +426,9 @@ extern "C" {
 #define WOLFTPM_ADV_IO
 #define WOLFTPM_INCLUDE_IO_FILE
 #define WOLFTPM_ZEPHYR_I2C_BUS flexcomm3_lpi2c3
-//#define WOLFTPM_ZEPHYR_I2C_SPEED I2C_SPEED_FAST
+/* Match the overlay's 100 kHz clock-frequency and avoid wolfTPM's fallback
+ * #warning, which is an error in Zephyr's -Werror builds. */
+#define WOLFTPM_ZEPHYR_I2C_SPEED I2C_SPEED_STANDARD
 #define WOLFTPM2_USE_WOLF_RNG
 #define WOLFTPM2_USE_HW_RNG
 #define WOLFTPM2_CERT_GEN

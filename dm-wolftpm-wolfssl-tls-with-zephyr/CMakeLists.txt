@@ -38,6 +38,13 @@ target_sources(app PRIVATE __repo__/modules/crypto/wolfssl/wolfcrypt/benchmark/b
 
 target_include_directories(app PRIVATE src)
 target_include_directories(app PRIVATE __repo__/modules/lib/wolftpm/examples/wrap)
+
+# wolfTPM v3.10.0 defines STRINGIFY() after wolfSSL settings include Zephyr
+# headers.  Force the Zephyr-compatible companion macro into every application
+# translation unit before wolfTPM headers are processed.
+target_compile_options(app PRIVATE
+    "-include;${CMAKE_SOURCE_DIR}/src/wolftpm_zephyr_compat.h"
+)
 target_include_directories(app PRIVATE __repo__/modules/lib/wolftpm/examples/csr)
 target_include_directories(app PRIVATE __repo__/modules/lib/wolftpm/examples/bench)
 target_include_directories(app PRIVATE __repo__/modules/lib/wolftpm/examples)
