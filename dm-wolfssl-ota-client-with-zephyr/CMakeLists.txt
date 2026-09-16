@@ -65,6 +65,15 @@ if(NOT _patch_applied EQUAL 0)
 endif()
 
 # ── wolfBoot binary build (configure time, before Zephyr) ─────────────────────
+# wolfBoot is a freestanding image and supplies its own C runtime. Do not link
+# the Zephyr SDK's Picolibc: unlike a Zephyr application, this standalone Make
+# build has no Zephyr libc hooks for stderr or _exit. Keep libgcc explicitly
+# for compiler-generated ARM helper routines.
+set(_WB_MAKEFILE "${CMAKE_BINARY_DIR}/wolfboot-zephyr-sdk.mk")
+file(WRITE "${_WB_MAKEFILE}"
+    "include ${WOLFBOOT_MODULE_DIR}/Makefile\n"
+    "LDFLAGS += -nostdlib -lgcc\n")
+
 # CORTEX_M33=1 must be on the command line so the ifeq in arch.mk (~line 357)
 # is evaluated true during Makefile parse. arch.mk sets CORTEX_M33=1 for mcxn
 # only at ~line 834, which is too late for the parse-time ifeq. Without this,
@@ -81,7 +90,8 @@ if(NOT EXISTS "${WOLFBOOT_MODULE_DIR}/src/wolfboot_tz_nsc.o")
     )
 endif()
 execute_process(
-    COMMAND make wolfboot.bin keytools tools/bin-assemble/bin-assemble
+    COMMAND make -f ${_WB_MAKEFILE}
+        wolfboot.bin keytools tools/bin-assemble/bin-assemble
         WOLFBOOT_ROOT=${WOLFBOOT_MODULE_DIR}
         TARGET=mcxn ARCH=ARM TZEN=1 SIGN=ECC384 HASH=SHA384
         CORTEX_M33=1
