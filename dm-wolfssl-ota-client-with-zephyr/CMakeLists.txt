@@ -68,11 +68,19 @@ endif()
 # wolfBoot is a freestanding image and supplies its own C runtime. Do not link
 # the Zephyr SDK's Picolibc: unlike a Zephyr application, this standalone Make
 # build has no Zephyr libc hooks for stderr or _exit. Keep libgcc explicitly
-# for compiler-generated ARM helper routines.
+# for compiler-generated ARM helper routines. It must be in LIBS, after the
+# object files, so GNU ld can extract the needed helpers from the archive.
+#
+# The MCUX SDK uses standard assert() in driver-only consistency checks. With
+# the Zephyr SDK, that expands to Picolibc's __assert_no_args(), which is not
+# part of this freestanding image. Disable those debug assertions rather than
+# pulling Zephyr's C library and its application runtime hooks into wolfBoot.
 set(_WB_MAKEFILE "${CMAKE_BINARY_DIR}/wolfboot-zephyr-sdk.mk")
 file(WRITE "${_WB_MAKEFILE}"
     "include ${WOLFBOOT_MODULE_DIR}/Makefile\n"
-    "LDFLAGS += -nostdlib -lgcc\n")
+    "CFLAGS += -DNDEBUG\n"
+    "LDFLAGS += -nostdlib\n"
+    "LIBS += -lgcc\n")
 
 # CORTEX_M33=1 must be on the command line so the ifeq in arch.mk (~line 357)
 # is evaluated true during Makefile parse. arch.mk sets CORTEX_M33=1 for mcxn
