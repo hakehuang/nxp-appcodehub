@@ -20,6 +20,26 @@ set(_MCUX_DRV     "${_MCUX_ROOT}/devices/MCX/MCXN/MCXN947")
 set(_MCUX_TMPL    "${CMAKE_SOURCE_DIR}/wolfbootConfig")
 set(_WOLFSSL_ROOT "${_ZEPHYRPROJECT_DIR}/modules/crypto/wolfssl")
 
+# wolfBoot is built below before find_package(Zephyr), so its Makefile cannot
+# inherit Zephyr's configured C compiler.  For ARCH=ARM, wolfBoot defaults to
+# CROSS_COMPILE=arm-none-eabi-, which is not installed in Zephyr SDK CI images.
+# Use the GNU toolchain bundled with the Zephyr SDK explicitly instead.
+if(DEFINED ENV{ZEPHYR_SDK_INSTALL_DIR} AND
+   NOT "$ENV{ZEPHYR_SDK_INSTALL_DIR}" STREQUAL "")
+    set(_WB_ZEPHYR_SDK "$ENV{ZEPHYR_SDK_INSTALL_DIR}")
+elseif(DEFINED ZEPHYR_SDK_INSTALL_DIR AND
+       NOT "${ZEPHYR_SDK_INSTALL_DIR}" STREQUAL "")
+    set(_WB_ZEPHYR_SDK "${ZEPHYR_SDK_INSTALL_DIR}")
+else()
+    message(FATAL_ERROR
+        "ZEPHYR_SDK_INSTALL_DIR is required to build wolfBoot with the "
+        "Zephyr SDK toolchain.")
+endif()
+# Zephyr SDK 1.x stores the GNU cross compiler beneath the gnu/ directory.
+# This is also the layout selected by Zephyr's zephyr/gnu toolchain variant.
+set(_WB_CROSS_COMPILE
+    "${_WB_ZEPHYR_SDK}/gnu/arm-zephyr-eabi/bin/arm-zephyr-eabi-")
+
 # ── Apply wolfBoot board patch (idempotent, configure time) ───────────────────
 set(_WB_PATCH "${CMAKE_SOURCE_DIR}/wolfbootConfig/0001-Update-configs-and-memory-map.patch")
 execute_process(
@@ -65,6 +85,7 @@ execute_process(
         WOLFBOOT_ROOT=${WOLFBOOT_MODULE_DIR}
         TARGET=mcxn ARCH=ARM TZEN=1 SIGN=ECC384 HASH=SHA384
         CORTEX_M33=1
+        CROSS_COMPILE=${_WB_CROSS_COMPILE}
         MCUXSDK=1
         MCUXPRESSO=${_MCUX_ROOT}
         MCUXPRESSO_CMSIS=${_MCUX_CMSIS}
